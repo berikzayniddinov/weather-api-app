@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map View</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    async function initializeMap() {
+        const city = prompt("Enter a city:");
+        if (!city) return alert("City is required");
+        try {
+            const response = await fetch(`/api/weather?city=${city}`);
+            if (!response.ok) {
+                throw new Error("Failed to fetch weather data");
+            }
+            const data = await response.json();
+            const { lat, lon } = data.coordinates;
+            const map = L.map('map').setView([lat, lon], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+            }).addTo(map);
+            L.marker([lat, lon])
+                .addTo(map)
+                .bindPopup(`
+                        <b>${data.city}</b><br>
+                        ${data.description}<br>
+                        Temperature: ${data.temperature}°C<br>
+                        Wind speed: ${data.windSpeed} m/s<br>
+                        Rain Volume: ${data.rainVolume} mm<br>
+                        AQI: ${data.airQuality.aqi} (${data.airQuality.mainPollutant})<br>
+                        Timezone: ${data.timezone.name} (GMT ${data.timezone.gmtOffset / 3600})
+                    `)
+                .openPopup();
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+    initializeMap();
+</script>
+</body>
+</html>
